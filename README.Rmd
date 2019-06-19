@@ -280,13 +280,6 @@ For after the conference, here's an animated version (not currently evaluated):
 library(gganimate)
 library(lubridate)
 
-fade_edge <- function(x) {
-  x$alpha = 0
-  x$edge_alpha = 0
-  x$edge_width = 0
-  x
-}
-
 animated_plot <- twitter_graph %>% 
   create_layout("nicely") %>% 
   ggraph() +     
@@ -302,8 +295,8 @@ animated_plot <- twitter_graph %>%
       plot.subtitle = element_text(size = rel(1.2)),
       plot.caption = element_text(colour = "#444444")) +
   transition_events(start = time, enter_length = hms::hms(hours = 5), exit_length = hms::hms(hours = 5)) +
-  enter_manual(fade_edge) + 
-  exit_manual(fade_edge)
+  enter_fade() + 
+  exit_fade()
   
 animate(animated_plot, 300, 10)
 ```
