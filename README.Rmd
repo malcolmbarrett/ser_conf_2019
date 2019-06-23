@@ -221,83 +221,140 @@ twitter_graph <- as.data.frame(mat) %>%
   activate(edges) %>%
   mutate(time = as.POSIXct(time, origin = Sys.time() - as.numeric(Sys.time())))
 
+saveRDS(twitter_graph, file.path("data", "twitter_graph.rds"))
+
+nodes_df <- twitter_graph %>% 
+  activate(nodes) %>% 
+  as_tibble()
+
+shown_names <- sample(
+  nodes_df$name, 
+  size = 75, 
+  # upweight by centrality
+  prob = nodes_df$value/sum(nodes_df$value)
+)
+
+sample_labels <- function(x) {
+  x %>% 
+    mutate(
+      name = as.character(name), 
+      name = ifelse(name %in% shown_names, name, "")
+    )
+}
+
 twitter_graph %>% 
-  create_layout("nicely") %>% 
-  ggraph() +     
-  geom_edge_fan(edge_alpha = .3, spread = 3, 
-                edge_colour = colorblindr::palette_OkabeIto[2]) + 
-    geom_node_point(aes(size = value),
-      shape = 21, 
-      col = "#E69F00", 
-      fill = "#E69F0090", 
-      show.legend = FALSE) + 
-    geom_node_text(aes(label = name), 
-                   col = "#222222", 
-                   repel = TRUE,
-                   size = 1.5, 
-                   segment.colour = "grey75",
-                   segment.size = .35) + 
-    theme_graph(base_size = 15, base_family = "Roboto Condensed") + 
-  theme(plot.title = element_text(size = rel(1.5), face = "bold", margin = margin(3, 1, 10, 1)),
-      plot.subtitle = element_text(size = rel(1.2)),
-      plot.caption = element_text(colour = "#444444")) +
-  labs(title = "Connections between Twitter users during SER 2019",
+  ggraph(layout = "nicely") +     
+  geom_edge_fan(
+    edge_alpha = .3, 
+    spread = 3, 
+    edge_colour = colorblindr::palette_OkabeIto[2]
+  ) + 
+  geom_node_point(
+    aes(size = value),
+    shape = 21, 
+    col = "#E69F00", 
+    fill = "#E69F0090", 
+    show.legend = FALSE) + 
+  geom_node_text(
+    data = sample_labels,
+    aes(label = name), 
+    col = "#222222", 
+    repel = TRUE,
+    size = 1.5, 
+    segment.colour = "grey75",
+    segment.size = .35
+  ) + 
+  theme_graph(base_size = 15, base_family = "Roboto Condensed") + 
+  theme(
+    plot.title = element_text(size = rel(1.5), face = "bold", margin = margin(3, 1, 10, 1)),
+    plot.subtitle = element_text(size = rel(1.2)),
+    plot.caption = element_text(colour = "#444444")
+  ) +
+  labs(
+    title = "Connections between Twitter users during SER 2019",
     caption = "\n\nSource: Data gathered via Twitter's standard `search/tweets` API using rtweet\n Code provided by Mike Kearney (@kearneymw)",
-    x = NULL, y = NULL) 
+    x = NULL, 
+    y = NULL
+  ) 
+
 
 ggsave("tweet_network.png", dpi = 320, width = 8, height = 6)
 
 twitter_graph %>% 
   create_layout("circle") %>% 
   ggraph() +     
-  geom_edge_fan(edge_alpha = .3, spread = 3, 
-                edge_colour = colorblindr::palette_OkabeIto[2]) + 
-    geom_node_point(size = 3,
-      shape = 21, 
-      col = "#E69F00", 
-      fill = "#E69F0090", 
-      show.legend = FALSE) + 
-    geom_node_text(aes(label = name), 
-                   col = "#222222", 
-                   repel = TRUE,
-                   size = 2.5, 
-                   segment.colour = "grey75",
-                   segment.size = .35) + 
-    theme_graph(base_size = 15, base_family = "Roboto Condensed") + 
-  theme(plot.title = element_text(size = rel(1.5), face = "bold", margin = margin(3, 1, 10, 1)),
-      plot.subtitle = element_text(size = rel(1.2)),
-      plot.caption = element_text(colour = "#444444")) +
-  labs(title = "Connections between Twitter users during SER 2019",
+  geom_edge_fan(
+    edge_alpha = .3, 
+    spread = 3, 
+    edge_colour = colorblindr::palette_OkabeIto[2]
+  ) + 
+  geom_node_point(
+    size = 3,
+    shape = 21, 
+    col = "#E69F00", 
+    fill = "#E69F0090", 
+    show.legend = FALSE
+  ) + 
+  geom_node_text(
+    data = sample_labels,
+    aes(label = name), 
+    col = "#222222", 
+    repel = TRUE,
+    size = 2.5, 
+    segment.colour = "grey75",
+    segment.size = .35
+  ) + 
+  theme_graph(base_size = 15, base_family = "Roboto Condensed") + 
+  theme(
+    plot.title = element_text(size = rel(1.5), face = "bold", margin = margin(3, 1, 10, 1)),
+    plot.subtitle = element_text(size = rel(1.2)),
+    plot.caption = element_text(colour = "#444444")
+  ) +
+  labs(
+    title = "Connections between Twitter users during SER 2019",
     caption = "\n\nSource: Data gathered via Twitter's standard `search/tweets` API using rtweet\n Code provided by Mike Kearney (@kearneymw)",
-    x = NULL, y = NULL)
+    x = NULL, 
+    y = NULL
+  )
 
 ggsave("tweet_network_circle.png", dpi = 320, width = 8, height = 6)
 ```
 
-For after the conference, here's an animated version (not currently evaluated):
+For after the conference, here's an animated version:
 
-```{r, eval = FALSE}
+```{r}
 library(gganimate)
 library(lubridate)
 
 animated_plot <- twitter_graph %>% 
   create_layout("nicely") %>% 
   ggraph() +     
+  geom_node_point(
+    aes(size = value),
+    shape = 21, 
+    col = "#E69F00", 
+    fill = "#E69F0090",
+    show.legend = FALSE
+  ) + 
   geom_edge_link0(edge_colour = colorblindr::palette_OkabeIto[2], edge_width = 1.25) + 
-    geom_node_point(aes(size = value),
-      shape = 21, 
-      col = "#E69F00", 
-      fill = "#E69F0090", 
-      show.legend = FALSE) + 
-    theme_graph(base_size = 13, base_family = "Roboto Condensed") + 
+  theme_graph(base_size = 13, base_family = "Roboto Condensed") + 
   ggtitle("Connections between Twitter users during SER 2019", subtitle = "Date: {month(frame_time)}-{day(frame_time)}") +
-  theme(plot.title = element_text(size = rel(1.5), face = "bold", margin = margin(3, 1, 10, 1)),
-      plot.subtitle = element_text(size = rel(1.2)),
-      plot.caption = element_text(colour = "#444444")) +
-  transition_events(start = time, enter_length = hms::hms(hours = 5), exit_length = hms::hms(hours = 5)) +
+  theme(
+    plot.title = element_text(size = rel(1.5), face = "bold", margin = margin(3, 1, 10, 1)),
+    plot.subtitle = element_text(size = rel(1.2)),
+    plot.caption = element_text(colour = "#444444")
+  ) +
+  transition_events(
+    start = time, 
+    enter_length = hms::hms(hours = 5), 
+    exit_length = hms::hms(hours = 5)
+  ) +
   enter_fade() + 
   exit_fade()
   
-animate(animated_plot, 300, 10)
+twitter_animation <- animate(animated_plot, 300, 10)
+
+anim_save("twitter_animation.gif", twitter_animation)
+knitr::include_graphics("twitter_animation.gif")
 ```
 
